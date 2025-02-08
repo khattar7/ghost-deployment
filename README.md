@@ -1,5 +1,4 @@
 # ghost-deployment
-your_repo/
 │
 ├── deploy.sh                # Shell script to run the deployment
 ├── terraform/
