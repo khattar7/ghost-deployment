@@ -1,0 +1,65 @@
+---
+- name: Deploy Ghost Application with Cloud SQL
+  hosts: all
+  become: true
+
+  vars:
+    ghost_dir: /var/lib/ghost
+    db_host: "{{ cloudsql_ip }}"   # Fix: Directly use passed variable
+    db_user: "ghost_user"
+    db_password: "{{ db_password }}"  # Fix: Use passed variable
+    db_name: "ghost"
+
+  tasks:
+    - name: Install required dependencies
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - docker.io
+        - mysql-client
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Verify Cloud SQL connection
+      command: >
+        mysql --protocol=tcp -h {{ db_host }} -u {{ db_user }} -p{{ db_password }} -e "SHOW DATABASES;"
+      register: mysql_check
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Debug MySQL connection output
+      debug:
+        msg: "{{ mysql_check.stdout }}"
+    
+    - name: Create Ghost directories
+      file:
+        path: "{{ ghost_dir }}/{{ item }}"
+        state: directory
+        mode: 0755
+      loop:
+        - content
+        - config
+
+    - name: Deploy Ghost container
+      docker_container:
+        name: ghost
+        image: ghost:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "2368:2368"
+        env:
+          NODE_ENV: production
+          database__client: mysql
+          database__connection__host: "{{ db_host }}"
+          database__connection__user: "{{ db_user }}"
+          database__connection__password: "{{ db_password }}"
+          database__connection__database: "{{ db_name }}"
+        volumes:
+          - "{{ ghost_dir }}/content:/var/lib/ghost/content"
+          - "{{ ghost_dir }}/config:/var/lib/ghost/config"
