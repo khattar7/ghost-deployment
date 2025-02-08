@@ -15,8 +15,7 @@
 . Prerequisites
 •	Google Cloud SDK installed (gcloud CLI)
 •	Terraform installed
-•	Ansible installed (Some fixes if we face error in installing Ansible sudo apt update --fix-missing 
-then: sudo apt install ansible -y)
+•	Ansible installed 
 •	A GCP account with billing enabled
 
 
